@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useRideContext } from '../hooks/useRideContext';
-import { rideService } from '../services/rideService';
 
 interface LocationInput {
   address: string;
@@ -8,8 +7,12 @@ interface LocationInput {
   lng: number;
 }
 
-const BookingForm: React.FC = () => {
-  const { currentUser, setPickupLocation, setDropoffLocation, selectedDriver } = useRideContext();
+interface BookingFormProps {
+  onNext: () => void;
+}
+
+const BookingForm: React.FC<BookingFormProps> = ({ onNext }) => {
+  const { currentUser, setPickupLocation, setDropoffLocation } = useRideContext();
   const [pickupAddress, setPickupAddress] = useState('');
   const [dropoffAddress, setDropoffAddress] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +36,7 @@ const BookingForm: React.FC = () => {
     setError(null);
 
     if (!currentUser) {
-      setError('Please register first');
+      setError('Please login first');
       return;
     }
 
@@ -51,20 +54,12 @@ const BookingForm: React.FC = () => {
       setPickupLocation({ lat: pickupLocation.lat, lng: pickupLocation.lng });
       setDropoffLocation({ lat: dropoffLocation.lat, lng: dropoffLocation.lng });
 
-      // Only create ride if driver is selected
-      if (selectedDriver) {
-        const rideRequest = {
-          userId: currentUser.id,
-          pickupLatitude: pickupLocation.lat,
-          pickupLongitude: pickupLocation.lng,
-          dropoffLatitude: dropoffLocation.lat,
-          dropoffLongitude: dropoffLocation.lng,
-        };
-
-        await rideService.createRide(rideRequest);
-      }
+      // Move to next step (driver selection)
+      setTimeout(() => {
+        onNext();
+      }, 500);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create booking');
+      setError(err.response?.data?.message || 'Failed to process booking');
     } finally {
       setLoading(false);
     }
@@ -72,7 +67,7 @@ const BookingForm: React.FC = () => {
 
   return (
     <div className="booking-form">
-      <h3>Book a Ride</h3>
+      <h3>Step 1: Enter Your Pickup & Dropoff</h3>
       {error && <div className="error-message">{error}</div>}
       
       <form onSubmit={handleSubmit}>
@@ -98,16 +93,8 @@ const BookingForm: React.FC = () => {
           />
         </div>
 
-        {selectedDriver && (
-          <div className="selected-driver-info">
-            <p>Selected Driver: <strong>{selectedDriver.name}</strong></p>
-            <p>Phone: {selectedDriver.phone}</p>
-            <p>Rating: ⭐ {selectedDriver.rating.toFixed(1)}</p>
-          </div>
-        )}
-
-        <button type="submit" disabled={loading || !selectedDriver}>
-          {loading ? 'Booking...' : 'Confirm Booking'}
+        <button type="submit" disabled={loading} className="btn-primary">
+          {loading ? 'Processing...' : 'Find Available Drivers'}
         </button>
       </form>
     </div>

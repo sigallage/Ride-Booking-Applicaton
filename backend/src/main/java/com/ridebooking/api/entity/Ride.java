@@ -53,7 +53,7 @@ public class Ride {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column
     private LocalDateTime completedAt;
 
     @PrePersist

@@ -3,10 +3,19 @@ import { useRideContext } from '../hooks/useRideContext';
 import { rideService, Ride } from '../services/rideService';
 
 const RideConfirmation: React.FC = () => {
-  const { activeRide, setActiveRide } = useRideContext();
+  const { 
+    currentUser,
+    activeRide, 
+    setActiveRide,
+    selectedDriver,
+    pickupLocation,
+    dropoffLocation
+  } = useRideContext();
+  
   const [rideStatus, setRideStatus] = useState<Ride | null>(activeRide || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rideConfirmed, setRideConfirmed] = useState(!!activeRide);
 
   useEffect(() => {
     if (activeRide) {
@@ -25,6 +34,35 @@ const RideConfirmation: React.FC = () => {
       setRideStatus(response.data);
     } catch (err: any) {
       setError('Failed to fetch ride status');
+    }
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!currentUser || !selectedDriver || !pickupLocation || !dropoffLocation) {
+      setError('Please complete all steps first');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const rideRequest = {
+        userId: currentUser.id,
+        pickupLatitude: pickupLocation.lat,
+        pickupLongitude: pickupLocation.lng,
+        dropoffLatitude: dropoffLocation.lat,
+        dropoffLongitude: dropoffLocation.lng,
+      };
+
+      const response = await rideService.createRide(rideRequest);
+      setRideStatus(response.data);
+      setActiveRide(response.data);
+      setRideConfirmed(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create ride');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,13 +85,62 @@ const RideConfirmation: React.FC = () => {
     }
   };
 
-  if (!rideStatus) {
-    return <div>No active ride</div>;
+  // Show booking preview if not confirmed yet
+  if (!rideConfirmed || !rideStatus) {
+    return (
+      <div className="ride-confirmation">
+        <h3>Step 3: Confirm Your Booking</h3>
+        {error && <div className="error-message">{error}</div>}
+
+        {selectedDriver && pickupLocation && dropoffLocation && (
+          <div className="ride-details">
+            <div className="detail-item">
+              <label>Driver:</label>
+              <span><strong>{selectedDriver.name}</strong></span>
+            </div>
+
+            <div className="detail-item">
+              <label>Driver Phone:</label>
+              <span>{selectedDriver.phone}</span>
+            </div>
+
+            <div className="detail-item">
+              <label>Driver Rating:</label>
+              <span>⭐ {selectedDriver.rating?.toFixed(1)}</span>
+            </div>
+
+            <div className="detail-item">
+              <label>Pickup Location:</label>
+              <span>Lat: {pickupLocation.lat.toFixed(4)}, Lng: {pickupLocation.lng.toFixed(4)}</span>
+            </div>
+
+            <div className="detail-item">
+              <label>Dropoff Location:</label>
+              <span>Lat: {dropoffLocation.lat.toFixed(4)}, Lng: {dropoffLocation.lng.toFixed(4)}</span>
+            </div>
+
+            <button 
+              onClick={handleConfirmBooking} 
+              disabled={loading}
+              className="btn-primary"
+              style={{ width: '100%', marginTop: '1.5rem', padding: '0.75rem' }}
+            >
+              {loading ? 'Creating Ride...' : 'Confirm & Book Ride'}
+            </button>
+          </div>
+        )}
+
+        {!selectedDriver && (
+          <div className="error-message">Please select a driver first</div>
+        )}
+      </div>
+    );
   }
 
+  // Show ride status if confirmed
   return (
     <div className="ride-confirmation">
-      <h3>Ride Confirmation</h3>
+      <h3>Your Ride Details</h3>
       {error && <div className="error-message">{error}</div>}
 
       <div className="ride-details">

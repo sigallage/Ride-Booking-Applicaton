@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRideContext } from '../context/RideContext';
+import { useRideContext } from '../hooks/useRideContext';
 import authService from '../services/authService';
 
 interface LoginFormData {
