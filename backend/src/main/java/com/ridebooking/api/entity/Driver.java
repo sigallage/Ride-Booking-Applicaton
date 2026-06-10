@@ -33,10 +33,10 @@ public class Driver {
     @Column(nullable = false)
     private DriverStatus status;
 
-    @Column(name = "current_latitude", nullable = false)
+    @Column(name = "current_latitude", nullable = false, precision = 10, scale = 8)
     private BigDecimal currentLatitude;
 
-    @Column(name = "current_longitude", nullable = false)
+    @Column(name = "current_longitude", nullable = false, precision = 11, scale = 8)
     private BigDecimal currentLongitude;
 
     @Column(nullable = false)

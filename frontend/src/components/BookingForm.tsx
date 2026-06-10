@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { LoadScript, GoogleMap, Marker, InfoWindow, Polyline } from '@react-google-maps/api';
 import { useRideContext } from '../hooks/useRideContext';
-
-interface LocationInput {
-  address: string;
-  lat: number;
-  lng: number;
-}
+import LocationPicker from './LocationPicker';
 
 interface BookingFormProps {
   onNext: () => void;
@@ -13,22 +9,50 @@ interface BookingFormProps {
 
 const BookingForm: React.FC<BookingFormProps> = ({ onNext }) => {
   const { currentUser, setPickupLocation, setDropoffLocation } = useRideContext();
-  const [pickupAddress, setPickupAddress] = useState('');
-  const [dropoffAddress, setDropoffAddress] = useState('');
+  const [pickupLocation, setPickupLocationState] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
+  const [dropoffLocation, setDropoffLocationState] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState({ lat: 6.9271, lng: 80.7789 });
+  const [openInfoWindow, setOpenInfoWindow] = useState<'pickup' | 'dropoff' | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
-  // Mock geocoding - in production, use Google Maps Geocoding API
-  const mockGeocode = (address: string): LocationInput => {
-    const locations: { [key: string]: LocationInput } = {
-      'times square': { address: 'Times Square, NYC', lat: 40.758896, lng: -73.985130 },
-      'central park': { address: 'Central Park, NYC', lat: 40.785091, lng: -73.968285 },
-      'brooklyn bridge': { address: 'Brooklyn Bridge, NYC', lat: 40.706086, lng: -73.996979 },
-      'empire state': { address: 'Empire State Building, NYC', lat: 40.748817, lng: -73.985428 },
-    };
-    
-    const key = address.toLowerCase();
-    return locations[key] || { address, lat: 40.7128, lng: -74.0060 };
+  // Update map center and zoom when locations change
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (pickupLocation && dropoffLocation) {
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend({ lat: pickupLocation.lat, lng: pickupLocation.lng });
+      bounds.extend({ lat: dropoffLocation.lat, lng: dropoffLocation.lng });
+      mapRef.current.fitBounds(bounds);
+    } else if (pickupLocation) {
+      setMapCenter({ lat: pickupLocation.lat, lng: pickupLocation.lng });
+      mapRef.current.setCenter({ lat: pickupLocation.lat, lng: pickupLocation.lng });
+      mapRef.current.setZoom(15);
+    } else if (dropoffLocation) {
+      setMapCenter({ lat: dropoffLocation.lat, lng: dropoffLocation.lng });
+      mapRef.current.setCenter({ lat: dropoffLocation.lat, lng: dropoffLocation.lng });
+      mapRef.current.setZoom(15);
+    }
+  }, [pickupLocation, dropoffLocation]);
+
+  const handlePickupSelect = (location: { lat: number; lng: number; address: string }) => {
+    setPickupLocationState(location);
+    setError(null);
+  };
+
+  const handleDropoffSelect = (location: { lat: number; lng: number; address: string }) => {
+    setDropoffLocationState(location);
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,16 +64,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ onNext }) => {
       return;
     }
 
-    if (!pickupAddress || !dropoffAddress) {
-      setError('Please enter both pickup and dropoff addresses');
+    if (!pickupLocation || !dropoffLocation) {
+      setError('Please select both pickup and dropoff locations');
       return;
     }
 
     try {
       setLoading(true);
-
-      const pickupLocation = mockGeocode(pickupAddress);
-      const dropoffLocation = mockGeocode(dropoffAddress);
 
       setPickupLocation({ lat: pickupLocation.lat, lng: pickupLocation.lng });
       setDropoffLocation({ lat: dropoffLocation.lat, lng: dropoffLocation.lng });
@@ -65,39 +86,169 @@ const BookingForm: React.FC<BookingFormProps> = ({ onNext }) => {
     }
   };
 
+  const mapContainerStyle = {
+    width: '100%',
+    height: '400px',
+    borderRadius: '8px',
+    marginTop: '20px',
+  };
+
+  const routePath = pickupLocation && dropoffLocation ? [
+    { lat: pickupLocation.lat, lng: pickupLocation.lng },
+    { lat: dropoffLocation.lat, lng: dropoffLocation.lng },
+  ] : [];
+
   return (
-    <div className="booking-form">
-      <h3>Step 1: Enter Your Pickup & Dropoff</h3>
-      {error && <div className="error-message">{error}</div>}
-      
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Pickup Location</label>
-          <input
-            type="text"
-            placeholder="e.g., Times Square, Central Park"
-            value={pickupAddress}
-            onChange={(e) => setPickupAddress(e.target.value)}
-            required
-          />
-        </div>
+    <LoadScript 
+      googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
+      libraries={['places']}
+    >
+      <div className="booking-form">
+        <h3>Step 1: Select Your Pickup & Dropoff Locations</h3>
+        {error && <div className="error-message">{error}</div>}
 
-        <div className="form-group">
-          <label>Dropoff Location</label>
-          <input
-            type="text"
-            placeholder="e.g., Empire State, Brooklyn Bridge"
-            value={dropoffAddress}
-            onChange={(e) => setDropoffAddress(e.target.value)}
-            required
+        <form onSubmit={handleSubmit}>
+          <LocationPicker
+            label="Pickup Location"
+            onLocationSelect={handlePickupSelect}
+            currentValue={pickupLocation?.address}
           />
-        </div>
 
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? 'Processing...' : 'Find Available Drivers'}
-        </button>
-      </form>
-    </div>
+          <div style={{ marginTop: '20px' }}>
+            <LocationPicker
+              label="Dropoff Location"
+              onLocationSelect={handleDropoffSelect}
+              currentValue={dropoffLocation?.address}
+            />
+          </div>
+
+          {/* Unified Map showing both locations */}
+          {(pickupLocation || dropoffLocation) && (
+            <div style={{ marginTop: '20px' }}>
+              <p style={{ fontSize: '12px', color: '#666', marginBottom: '8px', fontWeight: '600' }}>
+                📍 Map Preview
+              </p>
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={mapCenter}
+                zoom={14}
+                onLoad={(map) => {
+                  mapRef.current = map;
+                  // Ensure Sri Lanka is visible
+                  if (!pickupLocation && !dropoffLocation) {
+                    map.setCenter({ lat: 6.9271, lng: 80.7789 });
+                    map.setZoom(8);
+                  }
+                }}
+                options={{
+                  mapTypeControl: true,
+                  fullscreenControl: false,
+                  streetViewControl: false,
+                }}
+              >
+                {/* Route Polyline */}
+                {routePath.length === 2 && (
+                  <Polyline
+                    path={routePath}
+                    options={{
+                      strokeColor: '#1b5e20',
+                      strokeOpacity: 0.8,
+                      strokeWeight: 3,
+                    }}
+                  />
+                )}
+
+                {/* Pickup Location Marker */}
+                {pickupLocation && (
+                  <Marker
+                    position={{ lat: pickupLocation.lat, lng: pickupLocation.lng }}
+                    title="Pickup Location"
+                    label={{
+                      text: 'P',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                    }}
+                    onClick={() => setOpenInfoWindow('pickup')}
+                    icon={{
+                      path: google.maps.SymbolPath.CIRCLE,
+                      scale: 12,
+                      fillColor: '#1b5e20',
+                      fillOpacity: 1,
+                      strokeColor: '#ffffff',
+                      strokeWeight: 3,
+                    }}
+                    zIndex={100}
+                  />
+                )}
+
+                {/* Dropoff Location Marker */}
+                {dropoffLocation && (
+                  <Marker
+                    position={{ lat: dropoffLocation.lat, lng: dropoffLocation.lng }}
+                    title="Dropoff Location"
+                    label={{
+                      text: 'D',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                    }}
+                    onClick={() => setOpenInfoWindow('dropoff')}
+                    icon={{
+                      path: google.maps.SymbolPath.CIRCLE,
+                      scale: 12,
+                      fillColor: '#d32f2f',
+                      fillOpacity: 1,
+                      strokeColor: '#ffffff',
+                      strokeWeight: 3,
+                    }}
+                    zIndex={100}
+                  />
+                )}
+
+                {/* Pickup Info Window */}
+                {openInfoWindow === 'pickup' && pickupLocation && (
+                  <InfoWindow 
+                    position={{ lat: pickupLocation.lat, lng: pickupLocation.lng }}
+                    onCloseClick={() => setOpenInfoWindow(null)}
+                    options={{ disableAutoPan: false }}
+                  >
+                    <div style={{ color: '#000', fontSize: '12px', padding: '8px' }}>
+                      <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#1b5e20' }}>📍 Pickup</p>
+                      <p style={{ margin: '0 0 4px 0', fontSize: '11px', maxWidth: '200px' }}>{pickupLocation.address}</p>
+                      <p style={{ margin: '0', fontSize: '9px', color: '#999' }}>
+                        {pickupLocation.lat.toFixed(6)}, {pickupLocation.lng.toFixed(6)}
+                      </p>
+                    </div>
+                  </InfoWindow>
+                )}
+
+                {/* Dropoff Info Window */}
+                {openInfoWindow === 'dropoff' && dropoffLocation && (
+                  <InfoWindow 
+                    position={{ lat: dropoffLocation.lat, lng: dropoffLocation.lng }}
+                    onCloseClick={() => setOpenInfoWindow(null)}
+                    options={{ disableAutoPan: false }}
+                  >
+                    <div style={{ color: '#000', fontSize: '12px', padding: '8px' }}>
+                      <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#d32f2f' }}>📍 Dropoff</p>
+                      <p style={{ margin: '0 0 4px 0', fontSize: '11px', maxWidth: '200px' }}>{dropoffLocation.address}</p>
+                      <p style={{ margin: '0', fontSize: '9px', color: '#999' }}>
+                        {dropoffLocation.lat.toFixed(6)}, {dropoffLocation.lng.toFixed(6)}
+                      </p>
+                    </div>
+                  </InfoWindow>
+                )}
+              </GoogleMap>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading || !pickupLocation || !dropoffLocation} className="btn-primary" style={{ marginTop: '24px', width: '100%', padding: '0.75rem' }}>
+            {loading ? 'Processing...' : 'Find Available Drivers'}
+          </button>
+        </form>
+      </div>
+    </LoadScript>
   );
 };
 
