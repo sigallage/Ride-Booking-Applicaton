@@ -72,7 +72,15 @@ const DriverList: React.FC<DriverListProps> = ({ onNext }) => {
           >
             <div className="driver-info">
               <h4>{driver.name}</h4>
-              <p>Rating: ⭐ {driver.rating.toFixed(1)}</p>
+              <div className="driver-vehicle">
+                {driver.vehicleType && (
+                  <p>{formatVehicleType(driver.vehicleType)}</p>
+                )}
+              </div>
+              <p>Rating: {driver.rating.toFixed(1)} ⭐</p>
+              {driver.totalTrips !== undefined && (
+                <p>Trips: {driver.totalTrips}</p>
+              )}
               <p>Distance: {(driver.distanceKm || 0).toFixed(1)} km</p>
               <p>Status: {driver.status}</p>
               <p>Phone: {driver.phone}</p>
@@ -100,6 +108,21 @@ const DriverList: React.FC<DriverListProps> = ({ onNext }) => {
       )}
     </div>
   );
+};
+
+const formatVehicleType = (vehicleType: string): string => {
+  switch (vehicleType) {
+    case 'MOTORBIKE':
+      return 'Motorbike';
+    case 'SMALL_CAR':
+      return 'Small Car';
+    case 'LARGE_CAR':
+      return 'Large Car';
+    case 'TUK':
+      return 'Tuk Tuk';
+    default:
+      return vehicleType;
+  }
 };
 
 export default DriverList;

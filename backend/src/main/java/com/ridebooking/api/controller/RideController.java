@@ -2,6 +2,7 @@ package com.ridebooking.api.controller;
 
 import com.ridebooking.api.dto.RideDTO;
 import com.ridebooking.api.dto.RideRequestDTO;
+import com.ridebooking.api.dto.RideRatingDTO;
 import com.ridebooking.api.entity.Ride.RideStatus;
 import com.ridebooking.api.service.RideService;
 import jakarta.validation.Valid;
@@ -71,5 +72,17 @@ public class RideController {
     public ResponseEntity<List<RideDTO>> getRidesByDriver(@PathVariable Long driverId) {
         List<RideDTO> rides = rideService.getRidesByDriver(driverId);
         return ResponseEntity.ok(rides);
+    }
+    
+    /**
+     * Submit rating for a completed ride
+     */
+    @PostMapping("/{id}/rating")
+    @Operation(summary = "Submit rating for a completed ride")
+    public ResponseEntity<RideDTO> submitRideRating(
+            @PathVariable Long id,
+            @Valid @RequestBody RideRatingDTO ratingRequest) {
+        RideDTO ride = rideService.submitRideRating(id, ratingRequest.getRating(), ratingRequest.getFeedback());
+        return ResponseEntity.ok(ride);
     }
 }

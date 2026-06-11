@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LoadScript, GoogleMap, Marker, InfoWindow, Polyline } from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow, Polyline } from '@react-google-maps/api';
 import { useRideContext } from '../hooks/useRideContext';
 import LocationPicker from './LocationPicker';
 
@@ -72,8 +72,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ onNext }) => {
     try {
       setLoading(true);
 
-      setPickupLocation({ lat: pickupLocation.lat, lng: pickupLocation.lng });
-      setDropoffLocation({ lat: dropoffLocation.lat, lng: dropoffLocation.lng });
+      setPickupLocation({ lat: pickupLocation.lat, lng: pickupLocation.lng, address: pickupLocation.address });
+      setDropoffLocation({ lat: dropoffLocation.lat, lng: dropoffLocation.lng, address: dropoffLocation.address });
 
       // Move to next step (driver selection)
       setTimeout(() => {
@@ -99,12 +99,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ onNext }) => {
   ] : [];
 
   return (
-    <LoadScript 
-      googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
-      libraries={['places']}
-    >
-      <div className="booking-form">
-        <h3>Step 1: Select Your Pickup & Dropoff Locations</h3>
+    <div className="booking-form">
+      <h3>Step 1: Select Your Pickup & Dropoff Locations</h3>
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit}>
@@ -248,7 +244,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onNext }) => {
           </button>
         </form>
       </div>
-    </LoadScript>
   );
 };
 

@@ -21,4 +21,6 @@ public class DriverDTO {
     private BigDecimal currentLongitude;
     private Double rating;
     private Double distanceKm;
+    private Integer totalTrips;
+    private Driver.VehicleType vehicleType;
 }

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRideContext } from '../hooks/useRideContext';
 import { rideService, Ride } from '../services/rideService';
+import ratingService from '../services/ratingService';
+import RatingTrip from './RatingTrip';
+import { calculateFareByVehicle } from '../utils/fareCalculator';
 
 const RideConfirmation: React.FC = () => {
   const { 
@@ -16,6 +19,7 @@ const RideConfirmation: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rideConfirmed, setRideConfirmed] = useState(!!activeRide);
+  const [showRating, setShowRating] = useState(false);
 
   useEffect(() => {
     if (activeRide) {
@@ -53,6 +57,7 @@ const RideConfirmation: React.FC = () => {
         pickupLongitude: pickupLocation.lng,
         dropoffLatitude: dropoffLocation.lat,
         dropoffLongitude: dropoffLocation.lng,
+        driverId: selectedDriver.id,
       };
 
       const response = await rideService.createRide(rideRequest);
@@ -76,13 +81,33 @@ const RideConfirmation: React.FC = () => {
       const response = await rideService.updateRideStatus(rideStatus.id, newStatus);
       setRideStatus(response.data);
       if (newStatus === 'COMPLETED') {
-        setActiveRide(null);
+        setShowRating(true);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update ride status');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRatingSubmit = async (rating: number, feedback: string) => {
+    if (!rideStatus) return;
+
+    try {
+      const response = await ratingService.submitRideRating(rideStatus.id, rating, feedback);
+      setRideStatus(response.data);
+      setActiveRide(null);
+      // Stay in the ride confirmation with the success message
+    } catch (err: any) {
+      console.error('Rating submission error:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      throw new Error(err.response?.data?.message || err.message || 'Failed to submit rating');
+    }
+  };
+
+  const handleRatingSkip = () => {
+    setShowRating(false);
+    setActiveRide(null);
   };
 
   // Show booking preview if not confirmed yet
@@ -106,18 +131,41 @@ const RideConfirmation: React.FC = () => {
 
             <div className="detail-item">
               <label>Driver Rating:</label>
-              <span>⭐ {selectedDriver.rating?.toFixed(1)}</span>
+              <span>{selectedDriver.rating?.toFixed(1)} ⭐</span>
             </div>
+
+            {selectedDriver.vehicleType && (
+              <div className="detail-item">
+                <label>Vehicle Type:</label>
+                <span>{formatVehicleType(selectedDriver.vehicleType)}</span>
+              </div>
+            )}
+
+            {selectedDriver.totalTrips !== undefined && (
+              <div className="detail-item">
+                <label>Driver Trips Completed:</label>
+                <span>{selectedDriver.totalTrips}</span>
+              </div>
+            )}
 
             <div className="detail-item">
               <label>Pickup Location:</label>
-              <span>Lat: {pickupLocation.lat.toFixed(4)}, Lng: {pickupLocation.lng.toFixed(4)}</span>
+              <span>{pickupLocation.address}</span>
             </div>
 
             <div className="detail-item">
               <label>Dropoff Location:</label>
-              <span>Lat: {dropoffLocation.lat.toFixed(4)}, Lng: {dropoffLocation.lng.toFixed(4)}</span>
+              <span>{dropoffLocation.address}</span>
             </div>
+
+            {rideStatus?.estimatedDistanceKm && selectedDriver.vehicleType && (
+              <div className="detail-item">
+                <label>Estimated Fare:</label>
+                <span className="fare-amount">
+                  LKR {calculateFareByVehicle(rideStatus.estimatedDistanceKm, selectedDriver.vehicleType)}
+                </span>
+              </div>
+            )}
 
             <button 
               onClick={handleConfirmBooking} 
@@ -138,6 +186,20 @@ const RideConfirmation: React.FC = () => {
   }
 
   // Show ride status if confirmed
+  if (showRating && rideStatus && rideStatus.status === 'COMPLETED') {
+    return (
+      <RatingTrip
+        rideId={rideStatus.id}
+        driverName={rideStatus.driverName || 'Driver'}
+        distance={rideStatus.estimatedDistanceKm || 0}
+        fare={Number(rideStatus.estimatedFare) || 0}
+        onSubmit={handleRatingSubmit}
+        onSkip={handleRatingSkip}
+      />
+    );
+  }
+
+  // Show ride status if confirmed
   return (
     <div className="ride-confirmation">
       <h3>Your Ride Details</h3>
@@ -147,7 +209,7 @@ const RideConfirmation: React.FC = () => {
         <div className="detail-item">
           <label>Ride Status:</label>
           <span className={`status-badge status-${rideStatus.status.toLowerCase()}`}>
-            {rideStatus.status}
+            {formatStatus(rideStatus.status)}
           </span>
         </div>
 
@@ -163,7 +225,7 @@ const RideConfirmation: React.FC = () => {
             </div>
             <div className="detail-item">
               <label>Driver Rating:</label>
-              <span>⭐ {rideStatus.driverRating?.toFixed(1)}</span>
+              <span>{rideStatus.driverRating?.toFixed(1)} ⭐</span>
             </div>
           </>
         )}
@@ -215,6 +277,38 @@ const RideConfirmation: React.FC = () => {
       </div>
     </div>
   );
+};
+
+const formatVehicleType = (vehicleType: string): string => {
+  switch (vehicleType) {
+    case 'MOTORBIKE':
+      return 'Motorbike';
+    case 'SMALL_CAR':
+      return 'Small Car';
+    case 'LARGE_CAR':
+      return 'Large Car';
+    case 'TUK':
+      return 'Tuk Tuk';
+    default:
+      return vehicleType;
+  }
+};
+
+const formatStatus = (status: string): string => {
+  switch (status) {
+    case 'REQUESTED':
+      return 'Requested';
+    case 'ASSIGNED':
+      return 'Assigned';
+    case 'IN_PROGRESS':
+      return 'In Progress';
+    case 'COMPLETED':
+      return 'Completed';
+    case 'CANCELLED':
+      return 'Cancelled';
+    default:
+      return status;
+  }
 };
 
 export default RideConfirmation;

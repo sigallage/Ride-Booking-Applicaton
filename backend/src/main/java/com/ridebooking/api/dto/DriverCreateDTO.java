@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import com.ridebooking.api.entity.Driver;
 
 @Data
 @NoArgsConstructor
@@ -29,4 +30,7 @@ public class DriverCreateDTO {
 
     @NotNull(message = "Initial longitude cannot be null")
     private BigDecimal currentLongitude;
+
+    @NotNull(message = "Vehicle type cannot be null")
+    private Driver.VehicleType vehicleType;
 }

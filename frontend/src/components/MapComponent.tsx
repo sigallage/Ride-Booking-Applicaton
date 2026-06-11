@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { useRideContext } from '../hooks/useRideContext';
 import { Driver } from '../services/driverService';
 
@@ -41,26 +41,16 @@ const MapComponent: React.FC = () => {
   };
 
   return (
-    <LoadScript 
-      googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
-      libraries={['places']}
-      onLoad={() => {
-        console.log('Google Maps API loaded successfully');
-      }}
-      onError={() => {
-        console.error('Failed to load Google Maps API');
+    <GoogleMap
+      mapContainerStyle={mapContainerStyle}
+      center={getMapCenter()}
+      zoom={availableDrivers.length > 0 ? 12 : 9}
+      options={{
+        mapTypeControl: true,
+        fullscreenControl: true,
+        streetViewControl: false,
       }}
     >
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={getMapCenter()}
-        zoom={availableDrivers.length > 0 ? 12 : 9}
-        options={{
-          mapTypeControl: true,
-          fullscreenControl: true,
-          streetViewControl: false,
-        }}
-      >
         {/* Pickup Location Marker */}
         {pickupLocation && (
           <Marker
@@ -146,7 +136,6 @@ const MapComponent: React.FC = () => {
           </InfoWindow>
         )}
       </GoogleMap>
-    </LoadScript>
   );
 };
 

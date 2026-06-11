@@ -28,4 +28,6 @@ public class RideDTO {
     private BigDecimal estimatedFare;
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
+    private Integer rating;
+    private String feedback;
 }

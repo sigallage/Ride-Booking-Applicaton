@@ -84,12 +84,44 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 180px 1fr 380px;
+  grid-template-columns: 180px 1fr;
   gap: 1.5rem;
   flex: 1;
   overflow: hidden;
   padding: 1.5rem;
   min-height: 0;
+}
+
+.layout.with-map {
+  grid-template-columns: 180px 1fr 400px;
+}
+
+.driver-map-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirmation-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .sidebar {
@@ -136,10 +168,16 @@
 .main-content {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 2rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   min-height: 0;
+}
+
+.layout:not(.with-map) .main-content {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .map-section {
@@ -151,6 +189,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 /* User Registration */
@@ -260,6 +299,30 @@
   color: #555;
   margin: 0.25rem 0;
   line-height: 1.4;
+}
+
+.driver-vehicle {
+  background: #e3f2fd;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  margin: 0.3rem 0;
+}
+
+.driver-vehicle p {
+  margin: 0;
+  color: #1976d2;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.fare-amount {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1b5e20;
+  background: #e8f5e9;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .driver-card button {

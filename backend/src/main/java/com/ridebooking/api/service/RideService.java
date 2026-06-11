@@ -43,30 +43,46 @@ public class RideService {
             request.getDropoffLatitude(), request.getDropoffLongitude()
         );
         
-        BigDecimal estimatedFare = LocationUtil.calculateEstimatedFare(distanceKm);
+        // Determine fare based on vehicle type if driver is specified, otherwise use default
+        BigDecimal estimatedFare;
+        Driver selectedDriver = null;
+        
+        if (request.getDriverId() != null) {
+            selectedDriver = driverRepository.findById(request.getDriverId())
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found with ID: " + request.getDriverId()));
+            estimatedFare = LocationUtil.calculateEstimatedFareByVehicle(distanceKm, selectedDriver.getVehicleType());
+        } else {
+            estimatedFare = LocationUtil.calculateEstimatedFare(distanceKm);
+        }
         
         // Create ride in REQUESTED status
         Ride ride = Ride.builder()
             .user(user)
-            .driver(null)
+            .driver(selectedDriver)
             .pickupLatitude(request.getPickupLatitude())
             .pickupLongitude(request.getPickupLongitude())
             .dropoffLatitude(request.getDropoffLatitude())
             .dropoffLongitude(request.getDropoffLongitude())
-            .status(RideStatus.REQUESTED)
+            .status(selectedDriver != null ? RideStatus.ASSIGNED : RideStatus.REQUESTED)
             .estimatedDistanceKm(distanceKm)
             .estimatedFare(estimatedFare)
             .build();
         
         Ride savedRide = rideRepository.save(ride);
         
-        // Try to assign nearest driver
-        try {
-            assignNearestDriver(savedRide);
-            savedRide = rideRepository.save(savedRide);
-        } catch (RideBookingException e) {
-            // No drivers available, but ride is created and waiting
-            // Client can check later or try again
+        // If no driver was specified, try to assign nearest driver
+        if (selectedDriver == null) {
+            try {
+                assignNearestDriver(savedRide);
+                savedRide = rideRepository.save(savedRide);
+            } catch (RideBookingException e) {
+                // No drivers available, but ride is created and waiting
+                // Client can check later or try again
+            }
+        } else {
+            // Mark selected driver as BUSY
+            selectedDriver.setStatus(Driver.DriverStatus.BUSY);
+            driverRepository.save(selectedDriver);
         }
         
         return mapToDTO(savedRide);
@@ -148,6 +164,50 @@ public class RideService {
             .collect(Collectors.toList());
     }
     
+    /**
+     * Submit rating for a completed ride
+     */
+    public RideDTO submitRideRating(Long rideId, Integer rating, String feedback) {
+        if (rating < 1 || rating > 5) {
+            throw new RideBookingException("Rating must be between 1 and 5");
+        }
+        
+        Ride ride = rideRepository.findById(rideId)
+            .orElseThrow(() -> new ResourceNotFoundException("Ride not found with ID: " + rideId));
+        
+        if (ride.getStatus() != RideStatus.COMPLETED) {
+            throw new RideBookingException("Only completed rides can be rated");
+        }
+        
+        ride.setRating(rating);
+        ride.setFeedback(feedback);
+        Ride updatedRide = rideRepository.save(ride);
+        
+        // Update driver rating
+        if (ride.getDriver() != null) {
+            Driver driver = ride.getDriver();
+            
+            // Handle null values for existing drivers (fields added later)
+            Integer currentTotalRatings = driver.getTotalRatings() != null ? driver.getTotalRatings() : 0;
+            Integer currentTotalRatingSum = driver.getTotalRatingSum() != null ? driver.getTotalRatingSum() : 0;
+            Integer currentTotalTrips = driver.getTotalTrips() != null ? driver.getTotalTrips() : 0;
+            
+            driver.setTotalRatings(currentTotalRatings + 1);
+            driver.setTotalRatingSum(currentTotalRatingSum + rating);
+            driver.setTotalTrips(currentTotalTrips + 1);
+            
+            // Recalculate average rating
+            int newTotalRatingSum = driver.getTotalRatingSum();
+            int newTotalRatings = driver.getTotalRatings();
+            double newRating = (double) newTotalRatingSum / newTotalRatings;
+            driver.setRating(Math.round(newRating * 10.0) / 10.0); // Round to 1 decimal place
+            
+            driverRepository.save(driver);
+        }
+        
+        return mapToDTO(updatedRide);
+    }
+    
     private void validateStatusTransition(RideStatus currentStatus, RideStatus newStatus) {
         // Define valid transitions
         if (currentStatus == RideStatus.REQUESTED && (newStatus != RideStatus.ASSIGNED && newStatus != RideStatus.CANCELLED)) {
@@ -178,6 +238,8 @@ public class RideService {
             .estimatedFare(ride.getEstimatedFare())
             .createdAt(ride.getCreatedAt())
             .completedAt(ride.getCompletedAt())
+            .rating(ride.getRating())
+            .feedback(ride.getFeedback())
             .build();
     }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LoadScript } from '@react-google-maps/api';
 import { RideProvider } from './context/RideContext';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -31,10 +32,14 @@ const Dashboard: React.FC = () => {
   return (
     <div className="dashboard">
       <div className="container">
-        <header className="header">
+        <LoadScript 
+          googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
+          libraries={['places']}
+        >
+          <header className="header">
           <div className="header-content">
             <div>
-              <h1>🚖 Ride Booking Application</h1>
+              <h1> Ride Booking Application</h1>
               <p>Book your ride in minutes</p>
             </div>
             <div className="header-user">
@@ -74,10 +79,8 @@ const Dashboard: React.FC = () => {
             {currentStep === 'confirmation' && <RideConfirmation />}
           </div>
 
-          <div className="map-section">
-            <MapComponent />
-          </div>
         </div>
+        </LoadScript>
       </div>
     </div>
   );

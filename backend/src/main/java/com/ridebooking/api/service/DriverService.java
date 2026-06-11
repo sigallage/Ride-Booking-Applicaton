@@ -40,6 +40,10 @@ public class DriverService {
             .currentLongitude(request.getCurrentLongitude())
             .status(DriverStatus.OFFLINE)
             .rating(5.0)
+            .totalTrips(0)
+            .totalRatings(0)
+            .totalRatingSum(0)
+            .vehicleType(request.getVehicleType())
             .build();
         
         Driver savedDriver = driverRepository.save(driver);
@@ -131,6 +135,8 @@ public class DriverService {
             .currentLongitude(driver.getCurrentLongitude())
             .rating(driver.getRating())
             .distanceKm(distanceKm)
+            .totalTrips(driver.getTotalTrips())
+            .vehicleType(driver.getVehicleType())
             .build();
     }
 }

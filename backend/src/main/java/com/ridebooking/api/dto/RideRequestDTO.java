@@ -27,4 +27,7 @@ public class RideRequestDTO {
 
     @NotNull(message = "Dropoff longitude cannot be null")
     private BigDecimal dropoffLongitude;
+
+    // Optional: If a specific driver is selected, use their vehicle type for fare calculation
+    private Long driverId;
 }

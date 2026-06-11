@@ -43,6 +43,23 @@ public class Driver {
     @Builder.Default
     private Double rating = 5.0;
 
+    @Column(name = "total_trips")
+    @Builder.Default
+    private Integer totalTrips = 0;
+
+    @Column(name = "total_ratings")
+    @Builder.Default
+    private Integer totalRatings = 0;
+
+    @Column(name = "total_rating_sum")
+    @Builder.Default
+    private Integer totalRatingSum = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "vehicle_type", nullable = false)
+    @Builder.Default
+    private VehicleType vehicleType = VehicleType.SMALL_CAR;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -64,5 +81,12 @@ public class Driver {
         AVAILABLE,
         BUSY,
         OFFLINE
+    }
+
+    public enum VehicleType {
+        MOTORBIKE,
+        SMALL_CAR,
+        LARGE_CAR,
+        TUK
     }
 }

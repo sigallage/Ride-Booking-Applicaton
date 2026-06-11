@@ -16,6 +16,8 @@ export interface Ride {
   estimatedFare?: number;
   createdAt?: string;
   completedAt?: string;
+  rating?: number;
+  feedback?: string;
 }
 
 export interface RideRequestDTO {
@@ -24,6 +26,7 @@ export interface RideRequestDTO {
   pickupLongitude: number;
   dropoffLatitude: number;
   dropoffLongitude: number;
+  driverId?: number;
 }
 
 export const rideService = {

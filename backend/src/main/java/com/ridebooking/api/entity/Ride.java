@@ -56,6 +56,12 @@ public class Ride {
     @Column
     private LocalDateTime completedAt;
 
+    @Column(name = "rating")
+    private Integer rating;
+
+    @Column(name = "feedback")
+    private String feedback;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
