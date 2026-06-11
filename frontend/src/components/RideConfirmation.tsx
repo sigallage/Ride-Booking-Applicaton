@@ -250,7 +250,7 @@ const RideConfirmation: React.FC = () => {
 
         <div className="detail-item">
           <label>Estimated Fare:</label>
-          <span className="fare">${rideStatus.estimatedFare?.toFixed(2)}</span>
+          <span className="fare">LKR {rideStatus.estimatedFare?.toFixed(2)}</span>
         </div>
 
         <div className="detail-item">

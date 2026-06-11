@@ -68,7 +68,7 @@ const RatingTrip: React.FC<RatingTripProps> = ({ rideId, driverName, distance, f
           </div>
           <div className="summary-item">
             <span>Total Fare:</span>
-            <strong>${fare.toFixed(2)}</strong>
+            <strong>LKR {fare.toFixed(2)}</strong>
           </div>
         </div>
 
