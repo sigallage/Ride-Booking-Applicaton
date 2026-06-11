@@ -60,6 +60,9 @@ public class Driver {
     @Builder.Default
     private VehicleType vehicleType = VehicleType.SMALL_CAR;
 
+    @Column(name = "gender", length = 50)
+    private String gender;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

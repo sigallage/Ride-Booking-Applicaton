@@ -14,6 +14,7 @@ export interface Driver {
   totalTrips?: number;
   vehicleType?: VehicleType;
   distanceKm?: number;
+  gender?: string;
 }
 
 export interface DriverCreateRequest {
@@ -23,6 +24,7 @@ export interface DriverCreateRequest {
   currentLatitude: number;
   currentLongitude: number;
   vehicleType: VehicleType;
+  gender?: string;
 }
 
 export const driverService = {

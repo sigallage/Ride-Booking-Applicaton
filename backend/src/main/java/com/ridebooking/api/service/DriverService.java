@@ -44,6 +44,7 @@ public class DriverService {
             .totalRatings(0)
             .totalRatingSum(0)
             .vehicleType(request.getVehicleType())
+            .gender(request.getGender())
             .build();
         
         Driver savedDriver = driverRepository.save(driver);
@@ -137,6 +138,7 @@ public class DriverService {
             .distanceKm(distanceKm)
             .totalTrips(driver.getTotalTrips())
             .vehicleType(driver.getVehicleType())
+            .gender(driver.getGender())
             .build();
     }
 }

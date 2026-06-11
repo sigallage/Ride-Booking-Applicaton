@@ -23,4 +23,5 @@ public class DriverDTO {
     private Double distanceKm;
     private Integer totalTrips;
     private Driver.VehicleType vehicleType;
+    private String gender;
 }

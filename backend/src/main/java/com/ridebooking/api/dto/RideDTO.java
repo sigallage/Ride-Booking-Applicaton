@@ -30,4 +30,5 @@ public class RideDTO {
     private LocalDateTime completedAt;
     private Integer rating;
     private String feedback;
+    private String driverGender;
 }

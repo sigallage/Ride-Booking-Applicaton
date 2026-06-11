@@ -78,6 +78,9 @@ const DriverList: React.FC<DriverListProps> = ({ onNext }) => {
                 )}
               </div>
               <p>Rating: {driver.rating.toFixed(1)} ⭐</p>
+              {driver.gender && (
+                <p>Gender: {driver.gender}</p>
+              )}
               {driver.totalTrips !== undefined && (
                 <p>Trips: {driver.totalTrips}</p>
               )}

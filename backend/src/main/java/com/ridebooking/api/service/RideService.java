@@ -240,6 +240,7 @@ public class RideService {
             .completedAt(ride.getCompletedAt())
             .rating(ride.getRating())
             .feedback(ride.getFeedback())
+            .driverGender(ride.getDriver() != null ? ride.getDriver().getGender() : null)
             .build();
     }
 }

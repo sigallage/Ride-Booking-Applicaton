@@ -124,6 +124,13 @@ const RideConfirmation: React.FC = () => {
               <span><strong>{selectedDriver.name}</strong></span>
             </div>
 
+            {selectedDriver.gender && (
+              <div className="detail-item">
+                <label>Driver Gender:</label>
+                <span>{selectedDriver.gender}</span>
+              </div>
+            )}
+
             <div className="detail-item">
               <label>Driver Phone:</label>
               <span>{selectedDriver.phone}</span>
@@ -219,6 +226,12 @@ const RideConfirmation: React.FC = () => {
               <label>Driver:</label>
               <span>{rideStatus.driverName}</span>
             </div>
+            {rideStatus.driverGender && (
+              <div className="detail-item">
+                <label>Driver Gender:</label>
+                <span>{rideStatus.driverGender}</span>
+              </div>
+            )}
             <div className="detail-item">
               <label>Driver Phone:</label>
               <span>{rideStatus.driverPhone}</span>

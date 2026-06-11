@@ -33,4 +33,6 @@ public class DriverCreateDTO {
 
     @NotNull(message = "Vehicle type cannot be null")
     private Driver.VehicleType vehicleType;
+
+    private String gender;
 }

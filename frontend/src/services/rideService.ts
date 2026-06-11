@@ -7,6 +7,7 @@ export interface Ride {
   driverName?: string;
   driverPhone?: string;
   driverRating?: number;
+  driverGender?: string;
   pickupLatitude: number;
   pickupLongitude: number;
   dropoffLatitude: number;
